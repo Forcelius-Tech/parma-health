@@ -2,12 +2,12 @@ import hashlib
 from typing import Any, Optional
 
 
-def mask_value(value: Any, salt: str = "default_salt") -> Optional[str]:
+def hash_sha256(value: Any, salt: str = "default_salt") -> Optional[str]:
     """
-    Masks a value using a salted SHA256 hash.
+    Hashes a value using a salted SHA256 hash.
 
     Args:
-        value: The value to mask.
+        value: The value to hash.
         salt: The salt string to use for hashing.
 
     Returns:
@@ -22,3 +22,8 @@ def mask_value(value: Any, salt: str = "default_salt") -> Optional[str]:
     # strictly speaking not critical for this simple use case but good practice
     salted_input = f"{salt}|{str(value)}".encode("utf-8")
     return hashlib.sha256(salted_input).hexdigest()
+
+
+# Aliases for different semantic uses of the same underlying primitive
+mask_value = hash_sha256
+pseudonymize_value = hash_sha256

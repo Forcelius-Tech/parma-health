@@ -1,7 +1,10 @@
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 import pandas as pd
-from parma_health.primitives import mask_value
+from parma_health.primitives import (
+    mask_value,
+    pseudonymize_value
+)
 
 
 class AnonymizationRule(BaseModel):
@@ -55,6 +58,12 @@ class Anonymizer:
             salt = rule.params.get("salt", self.config.salt)
             df[rule.field] = df[rule.field].apply(
                 lambda x: mask_value(x, salt=salt)
+            )
+        elif rule.action == "pseudonymize":
+            # Semantically identical to mask (hash) but distinct action name
+            salt = rule.params.get("salt", self.config.salt)
+            df[rule.field] = df[rule.field].apply(
+                lambda x: pseudonymize_value(x, salt=salt)
             )
         elif rule.action == "test_transform":
             # For testing purposes
