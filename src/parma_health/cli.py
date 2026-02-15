@@ -61,5 +61,62 @@ def run(source, destination):
         raise click.Abort()
 
 
+@main.command()
+@click.option(
+    '--source',
+    required=True,
+    type=click.Path(exists=True),
+    help='Path to input file'
+)
+@click.option(
+    '--destination',
+    default='output.toon',
+    help='Path to output file'
+)
+def optimize(source, destination):
+    """
+    Convert a dataset to TOON format for LLM training.
+    """
+    from parma_health.optimizer import Optimizer
+    import pandas as pd
+    import json
+
+    click.echo(f"Optimizing {source} -> {destination}")
+
+    try:
+        # Load data
+        if source.endswith('.csv'):
+            df = pd.read_csv(source)
+        elif source.endswith('.json'):
+            # Try reading as records list first
+            try:
+                with open(source, 'r') as f:
+                    data = json.load(f)
+                if isinstance(data, list):
+                    df = pd.DataFrame(data)
+                else:
+                    # Fallback to pandas read_json
+                    df = pd.read_json(source)
+            except Exception:
+                df = pd.read_json(source)
+        else:
+            click.echo("Error: Unsupported file type. Use .csv or .json", err=True)
+            return
+
+        # Optimize
+        optimizer = Optimizer()
+        toon_data = optimizer.to_toon(df)
+
+        # Write
+        with open(destination, 'w') as f:
+            f.write(toon_data)
+        
+        click.echo(f"Optimization complete. Output saved to {destination}")
+
+    except Exception as e:
+        click.echo(f"Error during optimization: {e}", err=True)
+        raise click.Abort()
+
+
 if __name__ == "__main__":
     main()
