@@ -1,7 +1,8 @@
 from parma_health.primitives import (
     hash_sha256,
     mask_value,
-    pseudonymize_value
+    pseudonymize_value,
+    generalize_value
 )
 
 
@@ -48,3 +49,35 @@ def test_hash_sha256_integers():
     val = hash_sha256(12345, salt="salty")
     assert isinstance(val, str)
     assert len(val) == 64
+
+
+def test_generalize_value_integers():
+    """Verify numeric generalization/bucketing."""
+    # Age-like examples
+    assert generalize_value(34, bucket_size=10) == "30-39"
+    assert generalize_value(30, bucket_size=10) == "30-39"
+    assert generalize_value(39, bucket_size=10) == "30-39"
+    
+    # Boundary cross
+    assert generalize_value(40, bucket_size=10) == "40-49"
+    
+    # Different bucket size
+    assert generalize_value(15, bucket_size=5) == "15-19"
+    assert generalize_value(14, bucket_size=5) == "10-14"
+
+
+def test_generalize_value_string_numbers():
+    """Verify string inputs that are valid integers work."""
+    assert generalize_value("34", bucket_size=10) == "30-39"
+
+
+def test_generalize_value_invalid_inputs():
+    """Verify fallback behavior for non-integer inputs."""
+    # Non-integer string -> returns original
+    assert generalize_value("abc", bucket_size=10) == "abc"
+    
+    # Float -> truncated to int then bucketed
+    assert generalize_value(12.9, bucket_size=10) == "10-19"
+    
+    # None -> None
+    assert generalize_value(None) is None

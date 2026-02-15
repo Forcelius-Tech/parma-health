@@ -109,3 +109,37 @@ def test_pseudonymize_rule(sample_df):
     expected_hash = pseudonymize_value("Alice", salt="default_salt")
     assert result['name'][0] == expected_hash
     assert result['age'].equals(sample_df['age'])
+
+
+def test_generalize_rule(sample_df):
+    """Verify 'generalize' action buckets values."""
+    config = AnonymizerConfig(rules=[
+        AnonymizationRule(
+            field='age',
+            action='generalize',
+            params={'range': 10}
+        )
+    ])
+    engine = Anonymizer(config)
+
+    result = engine.process_chunk(sample_df)
+
+    # 30 -> 30-39
+    # 25 -> 20-29
+    assert result['age'][0] == "30-39"
+    assert result['age'][1] == "20-29"
+    # Verify original not modified
+    assert sample_df['age'][0] == 30
+
+
+def test_generalize_rule_default_range(sample_df):
+    """Verify 'generalize' action uses default range (10)."""
+    config = AnonymizerConfig(rules=[
+        AnonymizationRule(
+            field='age',
+            action='generalize'
+        )
+    ])
+    engine = Anonymizer(config)
+    result = engine.process_chunk(sample_df)
+    assert result['age'][0] == "30-39"
