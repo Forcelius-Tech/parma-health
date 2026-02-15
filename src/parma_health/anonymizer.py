@@ -3,7 +3,8 @@ from pydantic import BaseModel, Field
 import pandas as pd
 from parma_health.primitives import (
     mask_value,
-    pseudonymize_value
+    pseudonymize_value,
+    generalize_value
 )
 
 
@@ -68,3 +69,9 @@ class Anonymizer:
         elif rule.action == "test_transform":
             # For testing purposes
             df[rule.field] = df[rule.field].astype(str) + "_transformed"
+        elif rule.action == "generalize":
+            # Uses 'range' parameter from config, defaulting to 10
+            bucket_size = rule.params.get("range", 10)
+            df[rule.field] = df[rule.field].apply(
+                lambda x: generalize_value(x, bucket_size=bucket_size)
+            )
